@@ -1,0 +1,20 @@
+---
+name: hyper-quality-review
+description: 按 Hyper Protocol 判断、功能、资产三层分别评审开发方案与产品，输出独立评分、卖点、BOM、里程碑、停止条件及阶段资格。用于正式方案评审、产品上线、课程打磨或资源评审，不把普通修改升级成全套审计。
+---
+
+# 三层品控评审
+
+本技能所在目录包含公开版harness与评审制度。先读 [README.md](README.md) 与 [总制度](references/00-评审总制度.md)。评开发方案用 [方案三层制度](references/09-开发方案评审.md) 与 [方案提示](prompts/plan-reviewer.md)；评实际产品用01—03分层制度与prompts/reviewer.md。两者都读 [资源/BOM](references/04-资源与BOM.md)，运行见 [手册](references/08-运行手册.md)。
+
+固定review_object=development_plan或product；方案/产品独立评分，不合并，不把方案写成已实现。方案profile仍为产品类型，只评本次指定里程碑；每步列产物、负责人、日期、验收、成本和停止线。额度继续null，不能把估计当用户预算。
+
+用户要求未来产品上线与课程打磨核对市场需求。每层都必须交付价值、问题和下一动作；同一报告还须给出卖点、现金/token/时间/关系消耗、BOM与最小验证。
+
+先复用已有上下文和项目事实，固定被评版本、任务、用户、阶段及生命周期。需要新档案时运行 `python harness.py init --review-object product` 或 `--review-object development_plan`，按对应提示实际读证据并填提案，再运行 `validate` 与 `review`。核对证据异常、约束后分数、门槛与资源决定范围。
+
+规则为试行版本：分数是证据约束结果，不是成功概率。未知保留null，高分不能抵消硬门槛。工程通过、专业评议、审美、真人接受和真实效果分别记录。历史记录设retrospective，本轮没运行就不写成新执行；关闭项目不自动重启。
+
+实际额度由用户后填，禁止编造预算、报价、订单、token用量或关系授权。预算空不妨碍生成评审，但不能生成确定的拨款金额。当前程序不执行上线、付费、外联或关系调用。既有明确授权在对应范围继续有效。
+
+修改harness或参数时先读 [校准治理](references/05-校准与治理.md)，升级版本、保留旧输入输出、运行 `python -m unittest discover -s tests -v`、`python tools/eval_suite.py --out 新目录` 及方案行为集 `python tools/plan_eval_suite.py --out 新目录`。若会改变放行行为且复杂，安排独立前向测试；给评审者原始任务和必要材料，不泄露预期答案。不要把合成回归通过当成AI/市场已校准。

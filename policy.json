@@ -1,0 +1,946 @@
+{
+  "version": "0.2.0",
+  "status": "provisional",
+  "calibration": "not_business_validated",
+  "protocol_commit": "5f5d4977a94ebe21ba83a50ef963bfbe92dd4173",
+  "layer_weights": {
+    "judgment": 45,
+    "function": 35,
+    "asset": 20
+  },
+  "metrics": [
+    {
+      "id": "J1",
+      "layer": "judgment",
+      "name": "真实需求与付费/采用动机",
+      "weight": 30,
+      "kinds": [
+        "customer",
+        "transaction",
+        "raw_data"
+      ],
+      "question": "谁遇到什么高频或高损失问题，谁使用、谁付费，已付出什么行动？"
+    },
+    {
+      "id": "J2",
+      "layer": "judgment",
+      "name": "卖点与替代方案优势",
+      "weight": 25,
+      "kinds": [
+        "customer",
+        "raw_data",
+        "test_run",
+        "source",
+        "counterevidence"
+      ],
+      "question": "对同一任务，较不做、人工、通用AI和直接替代品，优势在哪里、代价是什么？"
+    },
+    {
+      "id": "J3",
+      "layer": "judgment",
+      "name": "效果标准与指标有效性",
+      "weight": 20,
+      "kinds": [
+        "source",
+        "raw_data",
+        "test_run",
+        "human_review",
+        "counterevidence"
+      ],
+      "question": "指标是否真的测到承诺的价值，是否包含反例、失败和适用边界？"
+    },
+    {
+      "id": "J4",
+      "layer": "judgment",
+      "name": "资源回报与机会成本",
+      "weight": 15,
+      "kinds": [
+        "cost",
+        "transaction",
+        "raw_data",
+        "source"
+      ],
+      "question": "完整成本、产能、替代投入和最坏损失是否清楚？"
+    },
+    {
+      "id": "J5",
+      "layer": "judgment",
+      "name": "专业审美与用户适配",
+      "weight": 10,
+      "kinds": [
+        "human_review",
+        "customer",
+        "source"
+      ],
+      "question": "目标用户和专业人员对实际产物的可用性、表达与审美有何具体评议？"
+    },
+    {
+      "id": "F1",
+      "layer": "function",
+      "name": "核心任务真实完成",
+      "weight": 30,
+      "kinds": [
+        "test_run",
+        "raw_data",
+        "source"
+      ],
+      "question": "在目标环境中，最终状态是否确实达到任务目标？"
+    },
+    {
+      "id": "F2",
+      "layer": "function",
+      "name": "失败恢复与稳定性",
+      "weight": 25,
+      "kinds": [
+        "test_run",
+        "raw_data",
+        "source"
+      ],
+      "question": "错误输入、超时、中断、重复操作和恢复是否被实测？"
+    },
+    {
+      "id": "F3",
+      "layer": "function",
+      "name": "权限与承诺边界",
+      "weight": 20,
+      "kinds": [
+        "test_run",
+        "rights",
+        "source"
+      ],
+      "question": "身份、权限、敏感数据、外部动作和宣传声明是否受控？"
+    },
+    {
+      "id": "F4",
+      "layer": "function",
+      "name": "交付维护与容量",
+      "weight": 15,
+      "kinds": [
+        "test_run",
+        "raw_data",
+        "customer",
+        "source"
+      ],
+      "question": "安装、交接、监测、客服、更新及退场是否可承担？"
+    },
+    {
+      "id": "F5",
+      "layer": "function",
+      "name": "运行成本与时延可测",
+      "weight": 10,
+      "kinds": [
+        "test_run",
+        "cost",
+        "raw_data",
+        "source"
+      ],
+      "question": "单任务时间、重试、token与人工介入是否实测且能归属？"
+    },
+    {
+      "id": "A1",
+      "layer": "asset",
+      "name": "证据来源与版本可追溯",
+      "weight": 30,
+      "kinds": [
+        "source",
+        "test_run",
+        "raw_data"
+      ],
+      "question": "原件、引用、版本、哈希及衍生关系能否查回？"
+    },
+    {
+      "id": "A2",
+      "layer": "asset",
+      "name": "权利与数据使用范围",
+      "weight": 20,
+      "kinds": [
+        "rights",
+        "source",
+        "human_review"
+      ],
+      "question": "内容、代码、数据、品牌和学员作品的使用范围是否清楚？"
+    },
+    {
+      "id": "A3",
+      "layer": "asset",
+      "name": "可复用与交接价值",
+      "weight": 20,
+      "kinds": [
+        "test_run",
+        "source",
+        "customer"
+      ],
+      "question": "别人能否从资产复现关键任务，节省多少后续交付劳动？"
+    },
+    {
+      "id": "A4",
+      "layer": "asset",
+      "name": "反例与评测资产质量",
+      "weight": 20,
+      "kinds": [
+        "test_run",
+        "raw_data",
+        "source",
+        "counterevidence"
+      ],
+      "question": "是否保留失败样本、独立测试、数据分组与撤回结论？"
+    },
+    {
+      "id": "A5",
+      "layer": "asset",
+      "name": "维护退役与迁移",
+      "weight": 10,
+      "kinds": [
+        "source",
+        "test_run",
+        "rights"
+      ],
+      "question": "维护人、过期、撤权、归档、导出和替换成本是否明确？"
+    }
+  ],
+  "gates": [
+    {
+      "id": "G_SCOPE",
+      "name": "对象、版本、用户及成功条件明确",
+      "stages": [
+        "discovery",
+        "pilot",
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "source",
+        "customer"
+      ],
+      "min_strength": 2
+    },
+    {
+      "id": "G_TRUTH",
+      "name": "核心声明与指标有效，无未处置反证",
+      "stages": [
+        "discovery",
+        "pilot",
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "source",
+        "test_run",
+        "raw_data",
+        "human_review",
+        "counterevidence"
+      ],
+      "min_strength": 2
+    },
+    {
+      "id": "G_EXPERIMENT",
+      "name": "试验假设、停止线、下一决策明确",
+      "stages": [
+        "discovery",
+        "pilot"
+      ],
+      "kinds": [
+        "source"
+      ],
+      "min_strength": 2
+    },
+    {
+      "id": "G_DEMAND",
+      "name": "目标用户真实需求及行为证据",
+      "stages": [
+        "pilot",
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "customer",
+        "transaction",
+        "raw_data"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_CORE",
+      "name": "目标环境核心流程可完成",
+      "stages": [
+        "pilot",
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "test_run",
+        "raw_data"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_RIGHTS",
+      "name": "权限、数据与分发权利适配当前阶段",
+      "stages": [
+        "pilot",
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "rights",
+        "human_review"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_BASELINE",
+      "name": "与现实替代方案同口径比较",
+      "stages": [
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "test_run",
+        "customer",
+        "raw_data"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_VALUE",
+      "name": "真实使用达到事先定义的价值门槛",
+      "stages": [
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "customer",
+        "raw_data",
+        "transaction"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_ECON",
+      "name": "单位经济与压力情景可承担",
+      "stages": [
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "cost",
+        "transaction",
+        "raw_data"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_OPERATE",
+      "name": "交付、客服、回滚与退出责任明确",
+      "stages": [
+        "launch",
+        "scale"
+      ],
+      "kinds": [
+        "test_run",
+        "source",
+        "human_review"
+      ],
+      "min_strength": 3
+    },
+    {
+      "id": "G_REPEAT",
+      "name": "持续采用/复购及扩容证据",
+      "stages": [
+        "scale"
+      ],
+      "kinds": [
+        "customer",
+        "transaction",
+        "raw_data"
+      ],
+      "min_strength": 4
+    }
+  ],
+  "profiles": {
+    "skill": {
+      "extra_gates": [
+        {
+          "id": "P_SKILL",
+          "name": "独立上下文复现、缺证及冲突行为",
+          "kinds": [
+            "test_run"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "pilot",
+            "launch",
+            "scale"
+          ]
+        }
+      ]
+    },
+    "bot": {
+      "extra_gates": [
+        {
+          "id": "P_BOT",
+          "name": "实际业务状态、错误动作及人工接管",
+          "kinds": [
+            "test_run",
+            "raw_data"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "pilot",
+            "launch",
+            "scale"
+          ]
+        }
+      ]
+    },
+    "agent": {
+      "extra_gates": [
+        {
+          "id": "P_AGENT",
+          "name": "跨工具终态、权限与中断恢复",
+          "kinds": [
+            "test_run",
+            "raw_data"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "pilot",
+            "launch",
+            "scale"
+          ]
+        }
+      ]
+    },
+    "course": {
+      "extra_gates": [
+        {
+          "id": "P_TEACH",
+          "name": "真人试教、教师负担及课堂资源",
+          "kinds": [
+            "human_review",
+            "raw_data",
+            "customer"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "pilot",
+            "launch",
+            "scale"
+          ]
+        },
+        {
+          "id": "P_TRANSFER",
+          "name": "学员独立换题表现、帮助条件和延迟验证",
+          "kinds": [
+            "raw_data",
+            "human_review"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "launch",
+            "scale"
+          ]
+        }
+      ]
+    },
+    "hardware": {
+      "extra_gates": [
+        {
+          "id": "P_DEVICE",
+          "name": "目标实机、异常恢复与物理BOM",
+          "kinds": [
+            "test_run",
+            "raw_data",
+            "cost"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "pilot",
+            "launch",
+            "scale"
+          ]
+        }
+      ]
+    },
+    "research": {
+      "extra_gates": [
+        {
+          "id": "P_RESEARCH",
+          "name": "原始来源、方法有效性及可复核性",
+          "kinds": [
+            "raw_data",
+            "test_run",
+            "human_review"
+          ],
+          "min_strength": 3,
+          "stages": [
+            "pilot",
+            "launch",
+            "scale"
+          ]
+        }
+      ]
+    }
+  },
+  "stages": {
+    "discovery": {
+      "total_min": 30,
+      "layer_min": {
+        "judgment": 25,
+        "function": 0,
+        "asset": 20
+      },
+      "coverage_min": 40,
+      "required_reviews": []
+    },
+    "pilot": {
+      "total_min": 60,
+      "layer_min": {
+        "judgment": 50,
+        "function": 55,
+        "asset": 50
+      },
+      "coverage_min": 75,
+      "required_reviews": [
+        "engineering",
+        "domain"
+      ]
+    },
+    "launch": {
+      "total_min": 80,
+      "layer_min": {
+        "judgment": 80,
+        "function": 80,
+        "asset": 70
+      },
+      "coverage_min": 90,
+      "required_reviews": [
+        "engineering",
+        "domain",
+        "aesthetic",
+        "human_acceptance",
+        "real_world"
+      ]
+    },
+    "scale": {
+      "total_min": 85,
+      "layer_min": {
+        "judgment": 85,
+        "function": 85,
+        "asset": 80
+      },
+      "coverage_min": 95,
+      "required_reviews": [
+        "engineering",
+        "domain",
+        "aesthetic",
+        "human_acceptance",
+        "real_world"
+      ]
+    }
+  },
+  "strength_caps": {
+    "documented": 2,
+    "observed": 3,
+    "replicated": 4
+  },
+  "zero_score_blocks": [
+    "J1",
+    "J2",
+    "J3",
+    "J4",
+    "J5",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5"
+  ],
+  "bom_categories": [
+    "inference",
+    "infrastructure",
+    "tool_licenses",
+    "human_delivery",
+    "support_rework",
+    "acquisition",
+    "materials_equipment",
+    "tax_payment",
+    "shutdown_migration"
+  ],
+  "resource_dimensions": [
+    "cash",
+    "owner_hours",
+    "team_hours",
+    "tokens",
+    "relationship_uses"
+  ],
+  "calibration_requirements": {
+    "min_human_cases": 30,
+    "min_repeats": 3,
+    "max_mae": 0.5,
+    "min_gate_agreement": 0.95,
+    "max_false_release": 0
+  },
+  "plan_review": {
+    "layer_weights": {
+      "judgment": 45,
+      "function": 35,
+      "asset": 20
+    },
+    "metrics": [
+      {
+        "id": "PJ1",
+        "layer": "judgment",
+        "weight": 30,
+        "name": "问题与需求依据",
+        "kinds": [
+          "source",
+          "customer",
+          "transaction",
+          "raw_data"
+        ],
+        "question": "谁的何种代价值得解决，原始需求与反向样本是什么？",
+        "kind_caps": {
+          "source": 1
+        }
+      },
+      {
+        "id": "PJ2",
+        "layer": "judgment",
+        "weight": 25,
+        "name": "候选卖点与替代选择",
+        "kinds": [
+          "source",
+          "customer",
+          "raw_data",
+          "test_run",
+          "counterevidence"
+        ],
+        "question": "相对不做、人工、复用和直接替代，预期增益如何被推翻？"
+      },
+      {
+        "id": "PJ3",
+        "layer": "judgment",
+        "weight": 20,
+        "name": "验证设计与决策有效性",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data"
+        ],
+        "question": "成功失败线、基线、样本及检查器能否决定继续或停止？"
+      },
+      {
+        "id": "PJ4",
+        "layer": "judgment",
+        "weight": 15,
+        "name": "资源估计与机会成本",
+        "kinds": [
+          "cost",
+          "source",
+          "raw_data"
+        ],
+        "question": "开发、运营、退出与本人时间是否完整，估计有哪些依据和误差？"
+      },
+      {
+        "id": "PJ5",
+        "layer": "judgment",
+        "weight": 10,
+        "name": "用户流程与专业适配",
+        "kinds": [
+          "source",
+          "customer",
+          "human_review",
+          "test_run"
+        ],
+        "question": "用户与领域方是否能审阅实际流程/原型，是否适配当前场景？"
+      },
+      {
+        "id": "PF1",
+        "layer": "function",
+        "weight": 30,
+        "name": "端到端方案与技术可行性",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data"
+        ],
+        "question": "输入到业务终态是否有连贯实现路径，关键技术是否核实？"
+      },
+      {
+        "id": "PF2",
+        "layer": "function",
+        "weight": 25,
+        "name": "依赖、失败与恢复设计",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data",
+          "counterevidence"
+        ],
+        "question": "账号、数据、API和供给由谁取得；失败如何停止和恢复？"
+      },
+      {
+        "id": "PF3",
+        "layer": "function",
+        "weight": 20,
+        "name": "权限与承诺设计",
+        "kinds": [
+          "source",
+          "rights",
+          "test_run",
+          "human_review"
+        ],
+        "question": "最小权限、敏感数据、外部动作和宣传边界如何落实与验收？"
+      },
+      {
+        "id": "PF4",
+        "layer": "function",
+        "weight": 15,
+        "name": "里程碑可执行与可验收",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data"
+        ],
+        "question": "每步是否有产物、负责人、日期、验收和前置依赖？"
+      },
+      {
+        "id": "PF5",
+        "layer": "function",
+        "weight": 10,
+        "name": "成本计量与观测设计",
+        "kinds": [
+          "source",
+          "test_run",
+          "cost",
+          "raw_data"
+        ],
+        "question": "如何记录完整任务token、重试、时延、人工和真实终态？"
+      },
+      {
+        "id": "PA1",
+        "layer": "asset",
+        "weight": 30,
+        "name": "来源、假设与版本管理",
+        "kinds": [
+          "source",
+          "raw_data",
+          "test_run"
+        ],
+        "question": "原件、假设、方案版本与目标产品版本能否追溯？"
+      },
+      {
+        "id": "PA2",
+        "layer": "asset",
+        "weight": 20,
+        "name": "权利与依赖取得路径",
+        "kinds": [
+          "rights",
+          "source",
+          "human_review"
+        ],
+        "question": "代码、数据、内容与服务的权利能否满足拟定用途？"
+      },
+      {
+        "id": "PA3",
+        "layer": "asset",
+        "weight": 20,
+        "name": "复用与交付清单",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data"
+        ],
+        "question": "复用什么、改什么、交付什么，是否避免重复开发？"
+      },
+      {
+        "id": "PA4",
+        "layer": "asset",
+        "weight": 20,
+        "name": "评测与反例资产设计",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data",
+          "counterevidence"
+        ],
+        "question": "有无可执行用例、反例、冻结集和真实结果回收安排？"
+      },
+      {
+        "id": "PA5",
+        "layer": "asset",
+        "weight": 10,
+        "name": "维护退出与责任安排",
+        "kinds": [
+          "source",
+          "rights",
+          "cost",
+          "human_review"
+        ],
+        "question": "谁维护、如何回滚导出退场、承诺和资产由谁接手？"
+      }
+    ],
+    "gates": [
+      {
+        "id": "PG_SCOPE",
+        "name": "范围、真实用户任务与取舍明确",
+        "kinds": [
+          "source",
+          "customer"
+        ],
+        "min_strength": 2,
+        "stages": [
+          "validation",
+          "development"
+        ]
+      },
+      {
+        "id": "PG_TRUTH",
+        "name": "候选卖点、既有能力与未知诚实区分",
+        "kinds": [
+          "source",
+          "test_run",
+          "counterevidence"
+        ],
+        "min_strength": 2,
+        "stages": [
+          "validation",
+          "development"
+        ]
+      },
+      {
+        "id": "PG_EVAL",
+        "name": "成功、失败、基线和停止可检验",
+        "kinds": [
+          "source",
+          "test_run",
+          "raw_data"
+        ],
+        "min_strength": 2,
+        "stages": [
+          "validation",
+          "development"
+        ]
+      },
+      {
+        "id": "PG_RIGHTS",
+        "name": "拟用权利与权限路径可行",
+        "kinds": [
+          "rights",
+          "source",
+          "human_review"
+        ],
+        "min_strength": 2,
+        "stages": [
+          "validation",
+          "development"
+        ]
+      },
+      {
+        "id": "PG_DEMAND",
+        "name": "关键需求有真实行为或代价依据",
+        "kinds": [
+          "customer",
+          "raw_data",
+          "transaction"
+        ],
+        "min_strength": 3,
+        "stages": [
+          "development"
+        ]
+      },
+      {
+        "id": "PG_FEASIBILITY",
+        "name": "关键技术与集成可行性核实",
+        "kinds": [
+          "test_run",
+          "raw_data"
+        ],
+        "min_strength": 3,
+        "stages": [
+          "development"
+        ]
+      },
+      {
+        "id": "PG_OWNER",
+        "name": "下一里程碑责任与承接确认",
+        "kinds": [
+          "human_review",
+          "customer"
+        ],
+        "min_strength": 3,
+        "stages": [
+          "development"
+        ]
+      }
+    ],
+    "profiles": {
+      "skill": {
+        "extra_gates": []
+      },
+      "bot": {
+        "extra_gates": []
+      },
+      "agent": {
+        "extra_gates": []
+      },
+      "course": {
+        "extra_gates": []
+      },
+      "hardware": {
+        "extra_gates": []
+      },
+      "research": {
+        "extra_gates": []
+      }
+    },
+    "stages": {
+      "validation": {
+        "total_min": 60,
+        "layer_min": {
+          "judgment": 60,
+          "function": 55,
+          "asset": 50
+        },
+        "coverage_min": 85,
+        "required_reviews": []
+      },
+      "development": {
+        "total_min": 80,
+        "layer_min": {
+          "judgment": 80,
+          "function": 80,
+          "asset": 70
+        },
+        "coverage_min": 95,
+        "required_reviews": [
+          "engineering",
+          "domain"
+        ]
+      }
+    },
+    "zero_score_blocks": [
+      "PJ1",
+      "PJ2",
+      "PJ3",
+      "PJ4",
+      "PJ5",
+      "PF1",
+      "PF2",
+      "PF3",
+      "PF4",
+      "PF5",
+      "PA1",
+      "PA2",
+      "PA3",
+      "PA4",
+      "PA5"
+    ]
+  }
+}

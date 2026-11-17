@@ -1,0 +1,282 @@
+{
+  "schema_version": "1.1",
+  "as_of": "2026-11-12",
+  "purpose": "live_review",
+  "stage": "validation",
+  "product": {
+    "id": "plan-example",
+    "name": "开发方案待评模板",
+    "version": "unversioned",
+    "profile": "agent",
+    "lifecycle": "active",
+    "user": "待明确",
+    "buyer": "待明确",
+    "job": "待明确",
+    "alternative": "待比较：不做/人工/通用AI/直接替代"
+  },
+  "evidence": [],
+  "ratings": {
+    "PJ1": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PJ2": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PJ3": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PJ4": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PJ5": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PF1": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PF2": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PF3": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PF4": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PF5": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PA1": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PA2": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PA3": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PA4": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    },
+    "PA5": {
+      "score": null,
+      "reason": "未取得适用证据",
+      "evidence_refs": []
+    }
+  },
+  "gates": {},
+  "reviews": {
+    "engineering": {
+      "status": "not_run",
+      "reviewer_kind": "not_recorded",
+      "reason": "尚未取得评议",
+      "evidence_refs": []
+    },
+    "domain": {
+      "status": "not_run",
+      "reviewer_kind": "not_recorded",
+      "reason": "尚未取得评议",
+      "evidence_refs": []
+    },
+    "aesthetic": {
+      "status": "not_run",
+      "reviewer_kind": "not_recorded",
+      "reason": "尚未取得评议",
+      "evidence_refs": []
+    },
+    "human_acceptance": {
+      "status": "not_run",
+      "reviewer_kind": "not_recorded",
+      "reason": "尚未取得评议",
+      "evidence_refs": []
+    },
+    "real_world": {
+      "status": "not_run",
+      "reviewer_kind": "not_recorded",
+      "reason": "尚未取得评议",
+      "evidence_refs": []
+    }
+  },
+  "claims": [],
+  "layer_findings": {
+    "judgment": {
+      "value": "待识别可交付价值",
+      "problems": "证据尚缺",
+      "next_action": "取得本层直接证据"
+    },
+    "function": {
+      "value": "待识别可交付价值",
+      "problems": "证据尚缺",
+      "next_action": "取得本层直接证据"
+    },
+    "asset": {
+      "value": "待识别可交付价值",
+      "problems": "证据尚缺",
+      "next_action": "取得本层直接证据"
+    }
+  },
+  "bom": {
+    "currency": "CNY",
+    "horizon_months": 1,
+    "monthly_units": {
+      "low": null,
+      "base": null,
+      "high": null
+    },
+    "price_per_unit": {
+      "low": null,
+      "base": null,
+      "high": null
+    },
+    "coverage": {
+      "inference": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "infrastructure": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "tool_licenses": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "human_delivery": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "support_rework": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "acquisition": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "materials_equipment": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "tax_payment": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "shutdown_migration": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      }
+    },
+    "lines": []
+  },
+  "budget": {
+    "status": "unset",
+    "caps": {
+      "cash": null,
+      "owner_hours": null,
+      "team_hours": null,
+      "tokens": null,
+      "relationship_uses": null
+    },
+    "evidence_refs": [],
+    "scope": "milestone:M1"
+  },
+  "next_experiment": {
+    "hypothesis": "待明确",
+    "deliverable": "待明确",
+    "success": "待预注册",
+    "stop": "待预注册",
+    "owner": "待指定",
+    "deadline": "待排期",
+    "resource_cap": "待填"
+  },
+  "review_object": "development_plan",
+  "plan": {
+    "version": "plan-0.1-draft",
+    "baseline_product_version": null,
+    "scope_in": [],
+    "scope_out": [],
+    "requested_milestone": "M1",
+    "assumptions": [],
+    "dependencies": [],
+    "milestones": [
+      {
+        "id": "M1",
+        "title": "首个验证里程碑",
+        "owner": null,
+        "due": null,
+        "depends_on": [],
+        "deliverable": "",
+        "acceptance": {
+          "method": "",
+          "pass": "",
+          "fail": "",
+          "evidence_required": ""
+        },
+        "stop_conditions": [],
+        "validates_assumptions": [],
+        "resolves_dependencies": [],
+        "bom_line_ids": []
+      }
+    ],
+    "stop_conditions": [],
+    "phase_coverage": {
+      "validation": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "development": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "operation": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      },
+      "exit": {
+        "status": "unknown",
+        "reason": "尚未盘点",
+        "evidence_refs": []
+      }
+    }
+  }
+}

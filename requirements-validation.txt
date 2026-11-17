@@ -1,0 +1,3 @@
+# Core harness uses only the Python standard library.
+# Optional: pinned Hyper Protocol schema validator and protocol tests.
+jsonschema>=4.18,<5
