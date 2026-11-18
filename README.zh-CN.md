@@ -6,7 +6,34 @@
 
 **0.3.0 / 试行规则。** 支持 Skill、Bot、Agent、课程、硬件和研究型产品。方案通过不代表产品实现，高分不抵消硬门槛，预算未知不产生拨款或上线授权。
 
-**PRD现在评设计质量，不要求先有产品试用。** 充分的原始方案可支持高分；关键假设已有适用证据另加最高10分，缺证+0不扣分、不阻断；实证成熟度、执行准备和资源资格另列，假设仍可未验证，预算仍留空。产品评分不变。旧0.2.0方案须按新锚点重评，不能机械换算。
+## PRD和产品分别评什么
+
+**PRD评设计质量，不要求先有产品试用。** 一份充分的原始方案可以获得高分；产品验收则检查实际交付与效果证据。
+
+| 层 | PRD／开发方案 | 已实现产品 |
+| --- | --- | --- |
+| 判断 | 用户任务、需求推理、卖点与替代方案、验证方法、资源取舍 | 真实需求、采用理由、实际效果与投入依据 |
+| 功能 | 端到端开发逻辑、接口与状态、权限、依赖恢复、里程碑验收 | 功能能否完成任务、失败能否恢复、权限与交付是否成立 |
+| 资产 | 来源与版本、权利取得路径、复用、评测材料和退出设计 | 实际资产是否可追溯、可使用、可复用、可维护 |
+
+每层都给价值、问题和下一动作。方案的 `PJ/PF/PA` 与产品的 `J/F/A` 分开评分。
+
+## 如何看方案得分
+
+> 开发阶段鼓励关键假设已有适用证据；有则加分，无则不加分，不因缺证扣分、阻断或否决方案。
+
+| 结果 | 口径 | 没有真实试用时 |
+| --- | --- | --- |
+| 设计质量分 | **满分100**；评需求、逻辑、验收、成本和资产设计 | 原始PRD可支持完整0—4分锚点，不因未实施降分 |
+| 关键假设证据加分 | **额外0—10分**；仅奖励适用的事实证据 | 记为 **＋0**，不影响正常设计评分 |
+| 实证成熟度 | 单列假设、依赖和实际评议状态 | 保留 `unknown`／`unverified`／`not_run` |
+| 执行与资源资格 | 单列承接、排期、前置、BOM数值和预算 | 额度保持 `null`；设计通过不自动批准投入 |
+
+例如，同一设计可以是“**85/100 ＋ 0/10**”，取得适用证据后成为“**85/100 ＋ 5/10**”。这是分数示意，不是实际评测结果。`score`和`scorecards`保留100分设计分，`plan.evidence_bonus.reference_total`提供加分后的参考总分，最高110。
+
+设计门槛仍只看基础设计分：验证方案60分、开发方案80分，另有三层最低分及覆盖要求。证据加分不抵消设计硬伤；“没有试用结果”与“没有可执行的验证设计”分别处理。开发逻辑矛盾、验收设计缺失、成本遗漏、越权和未处理的已知反证仍严格评审。评分细则及加分算法见[方案制度](references/09-开发方案评审.md)。
+
+产品评分规则保持不变。旧0.2.0方案分须重读原件后按新锚点评审，不能机械换算或直接与新分数排名。历史报告继续保留。
 
 ## 能做什么
 
@@ -29,6 +56,8 @@ python harness.py init --id example --name "待评产品" --profile agent --as-o
 python harness.py init --review-object development_plan --id example-plan --name "待评开发方案" --profile agent --as-of 2026-11-18 --out runtime/plan.json
 python harness.py validate --input runtime/product.json
 python harness.py review --input runtime/product.json --out runtime/product-review-1
+python harness.py validate --input runtime/plan.json
+python harness.py review --input runtime/plan.json --out runtime/plan-review-1
 ```
 
 日期应改为实际评审日。正式评审前补充真实材料、评分提案、BOM和范围。空模板会得到 `NEEDS_EVIDENCE`，结构通过不代表产品通过。输出目录必须是新目录；其他位置的证据使用 `--evidence-root 路径`。
@@ -53,7 +82,9 @@ python tools/verify_bundle.py runtime/demo-1/product/task-bundle.json
 python tools/verify_public_source.py
 ```
 
-产品eval包含全部单元测试及8种产品行为场景；方案eval包含36种场景，其中31种生成协议包并检查复放。非法输入的预期拒绝也计入场景。公开版不含私人历史案例；回归通过不代表AI评分、市场或教学已校准。[验证范围](docs/VALIDATION.md)
+[v0.3.0发行验证](https://github.com/MkaliezZ/Hyper-Quality/releases/tag/v0.3.0)通过105项单元测试、8种产品场景和36种方案场景，其中31种方案生成协议包并检查复放。非法输入的预期拒绝也计入场景。CI覆盖Windows／Ubuntu与Python 3.11／3.13；当前提交的状态见[Actions](https://github.com/MkaliezZ/Hyper-Quality/actions)。
+
+专项回归覆盖无试用PRD、证据加分、错误证据类型、缺失验收、已知设计错误及空预算。公开版不含私人历史案例；回归通过不代表AI评分、市场或教学已校准。[验证范围](docs/VALIDATION.md)
 
 ## 复放与校准
 

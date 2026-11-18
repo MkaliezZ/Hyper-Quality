@@ -2,11 +2,38 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-Design-quality reviews for PRDs and evidence-bounded product/resource reviews for products and development plans, built on the judgment, function and asset layers of [Hyper Protocol](https://github.com/MkaliezZ/Hyper-Protocol).
+Review PRD designs, implemented products and resource requests through the judgment, function and asset layers of [Hyper Protocol](https://github.com/MkaliezZ/Hyper-Protocol).
 
 **Version 0.3.0 · provisional policy.** Review skills, bots, agents, courses, hardware and research products. Plans and implemented products receive separate scores. High scores never override failed gates, and missing budgets never become funding approval.
 
-A strong PRD can now earn a high **design-quality score without product trials**. Empirical validation maturity, execution readiness and resource eligibility are separate outputs. Applicable evidence supporting critical assumptions earns a separate bonus of up to 10 points. No evidence means +0, never a design deduction or admission gate. A high plan score never marks a hypothesis as verified. Existing product scoring is unchanged. Version 0.2 plan scores need a fresh review under the new anchors, not a numeric conversion.
+## What a PRD review evaluates
+
+**A PRD is scored on design quality without requiring prior product trials.** A thorough original specification can earn a high score. Product acceptance evaluates actual delivery and applicable outcome evidence.
+
+| Layer | PRD / development plan | Implemented product |
+| --- | --- | --- |
+| Judgment | User tasks, need reasoning, selling points, alternatives, validation design and resource tradeoffs | Actual demand, reasons to adopt, outcomes and investment evidence |
+| Function | End-to-end logic, contracts and states, permissions, dependency recovery and milestone acceptance | Task completion, recovery, permissions and delivery in practice |
+| Assets | Source/version tracking, rights acquisition, reuse, evaluation material and exit design | Traceable, usable, reusable and maintainable assets |
+
+Each layer includes value, problems and next action. Plan criteria `PJ/PF/PA` and product criteria `J/F/A` are scored separately.
+
+## How to read a plan score
+
+> At development stage, applicable evidence supporting critical assumptions is encouraged and rewarded. Missing evidence earns no bonus; it does not deduct design points, block entry or reject the plan.
+
+| Result | Meaning | Without product trials |
+| --- | --- | --- |
+| Design-quality score | **Out of 100**: problem reasoning, logic, acceptance, costs and assets | Original PRD material can support the full 0–4 criterion scale |
+| Critical-assumption evidence bonus | **An additional 0–10 points**, earned only by applicable factual evidence | **+0**, with no design-score penalty |
+| Empirical maturity | Separate assumption, dependency and actual-review states | Retain `unknown`, `unverified` and `not_run` |
+| Execution and resource eligibility | Separate owner, schedule, prerequisites, numeric costs and budget checks | Limits remain `null`; a design pass does not authorize spending |
+
+For example, the same design may receive **85/100 + 0/10**, then **85/100 + 5/10** when applicable evidence becomes available. These are illustrative scores, not evaluation results. `score` and `scorecards` retain the base design score; `plan.evidence_bonus.reference_total` adds the bonus for supplementary comparison, with a maximum of 110.
+
+Design thresholds use the base score only: 60 for a validation plan and 80 for a development specification, plus layer minima and coverage requirements. Bonuses cannot offset design defects. Missing trial results and missing executable validation design are separate issues. Contradictory logic, absent acceptance criteria, omitted costs, unauthorized actions and ignored counterevidence remain subject to strict review. See the [plan rubric and bonus calculation](references/09-开发方案评审.md).
+
+Product scoring is unchanged. Version 0.2 plan scores need a fresh reading under the new anchors; do not convert them numerically or rank them directly against new scores. Preserve historical reports.
 
 ## What it does
 
@@ -29,6 +56,8 @@ python harness.py init --id example --name "Example product" --profile agent --a
 python harness.py init --review-object development_plan --id example-plan --name "Example plan" --profile agent --as-of 2026-11-18 --out runtime/plan.json
 python harness.py validate --input runtime/product.json
 python harness.py review --input runtime/product.json --out runtime/product-review-1
+python harness.py validate --input runtime/plan.json
+python harness.py review --input runtime/plan.json --out runtime/plan-review-1
 ```
 
 Replace the date with the review date. Fill in actual sources, proposed ratings, BOM and scope before a real review. An empty template intentionally returns `NEEDS_EVIDENCE`. `validate` checks structure, not product quality. Each output directory must be new. Use `--evidence-root PATH` when evidence lives outside the checkout.
@@ -53,7 +82,9 @@ python tools/verify_bundle.py runtime/demo-1/product/task-bundle.json
 python tools/verify_public_source.py
 ```
 
-The product suite runs all unit tests plus 8 product scenarios. The plan suite checks 36 scenarios, including expected invalid inputs, 31 exported bundles and portable replay. These are engineering regressions, not AI judge calibration or market/teaching validation. Private historical reviews are excluded. See [validation scope](docs/VALIDATION.md).
+The [v0.3.0 release verification](https://github.com/MkaliezZ/Hyper-Quality/releases/tag/v0.3.0) passed 105 unit tests, 8 product scenarios and 36 plan scenarios, including expected invalid inputs and 31 exported plan bundles with portable replay. CI covers Windows and Ubuntu with Python 3.11 and 3.13; see [Actions](https://github.com/MkaliezZ/Hyper-Quality/actions) for the current commit's status.
+
+Regression cases cover PRDs without trials, optional evidence bonuses, inappropriate evidence types, absent acceptance criteria, known design defects and empty budgets. These are engineering checks, not AI judge calibration or market/teaching validation. Private historical reviews are excluded. See [validation scope](docs/VALIDATION.md).
 
 ## Replay and calibration
 
