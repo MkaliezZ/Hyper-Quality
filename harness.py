@@ -18,7 +18,7 @@ from pathlib import Path
 from plan_review import policy_for, validate_plan, assess_plan
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 getcontext().prec = 40
 LAYERS = ("judgment", "function", "asset")
 REVIEWS = ("engineering", "domain", "aesthetic", "human_acceptance", "real_world")
@@ -67,6 +67,14 @@ def validate_policy(p):
     require(set(p["layer_weights"]) == set(LAYERS), "三层权重缺项")
     require(all(number(x) and x > 0 for x in p["layer_weights"].values()), "权重必须为正")
     require(sum(p["layer_weights"].values()) == 100, "三层权重之和须为100")
+    if p.get('score_basis')=='design_quality':
+        bonus=p.get('evidence_bonus',{})
+        require(number(bonus.get('max_points')) and 0<=bonus['max_points']<=100, '方案证据加分上限非法')
+        require(set(bonus.get('kind_weights',{}))=={'demand','feasibility','economics','rights'} and
+                all(number(v) and v>0 for v in bonus['kind_weights'].values()), '方案证据加分类别权重非法')
+        require(set(bonus.get('strength_factors',{}))=={'observed','replicated'} and
+                all(number(v) and 0<=v<=1 for v in bonus['strength_factors'].values()) and
+                bonus['strength_factors']['observed']<=bonus['strength_factors']['replicated'], '方案证据加分强度非法')
     ids = [m["id"] for m in p["metrics"]]
     require(len(set(ids)) == len(ids), "指标编号重复")
     require(set(p["zero_score_blocks"]) <= set(ids), "零分阻断规则含未知指标")
@@ -339,15 +347,19 @@ def evaluate(d, p, root=ROOT):
     original_policy_hash = digest(canonical(p))
     obj = d.get('review_object', 'product')
     p = policy_for(p, obj)
+    design = obj == 'development_plan' and p.get('score_basis') == 'design_quality'
     ev = inspect_evidence(d, p, Path(root))
     metrics, layer_scores = {}, {}
     for m in p["metrics"]:
         r = d["ratings"][m["id"]]
         eligible = select_evidence(ev, r["evidence_refs"], m["id"], m["kinds"])
-        bounded_caps = {e['id']: min(e['cap'],m.get('kind_caps',{}).get(e['kind'],4)) for e in eligible}
+        design_sources = {e['id'] for e in eligible if design and e['kind']=='source' and e['cap']>=2
+                          and e['provenance']!='attested' and e.get('review_object')=='development_plan'
+                          and e.get('plan_version')==d['plan']['version']}
+        bounded_caps = {e['id']: 4 if e['id'] in design_sources else min(e['cap'],m.get('kind_caps',{}).get(e['kind'],4)) for e in eligible}
         cap = max(bounded_caps.values(), default=None)
         # Top score needs at least two independent evidence groups, not duplicate documents.
-        if cap == 4 and len({e["independence_group"] for e in eligible if bounded_caps[e['id']] >= 3}) < 2:
+        if cap == 4 and not design_sources and len({e["independence_group"] for e in eligible if bounded_caps[e['id']] >= 3}) < 2:
             cap = 3
         score = None if r["score"] is None or cap is None else min(r["score"], cap)
         metrics[m["id"]] = {**m, "proposed_score": r["score"], "score": score, "evidence_cap": cap,
@@ -415,7 +427,9 @@ def evaluate(d, p, root=ROOT):
     if obj == 'development_plan':
         plan_gates, plan_result = assess_plan(d, p, ev, select_evidence, cost_model)
         gates.extend(plan_gates)
-    if (d["stage"] in ("launch", "scale") or obj == 'development_plan') and not costs["complete"]:
+        if design:
+            plan_result['evidence_bonus']['reference_total']=round(total+plan_result['evidence_bonus']['points'],2)
+    if (d["stage"] in ("launch", "scale") or (obj == 'development_plan' and not design)) and not costs["complete"]:
         gates.append({"id": "BOM_COMPLETE", "name": "完整BOM", "status": "unknown", "reason": "成本缺项，不能给出完整成本或资源资格", "evidence_refs": []})
     cfg = p["stages"][d["stage"]]
     score_ok = total >= cfg["total_min"] and all(layer_scores[k]["score"] >= cfg["layer_min"][k] for k in LAYERS)
@@ -440,6 +454,8 @@ def evaluate(d, p, root=ROOT):
     resource_costs = plan_result['requested_costs'] if plan_result else costs
     if plan_result and not resource_costs['complete']:
         resource_reasons.append('本次请求范围的BOM未完整核查')
+    if design and plan_result['execution_readiness']['status']=='NOT_READY':
+        resource_reasons.append('执行准备条件未满足：'+'；'.join(x['reason'] for x in plan_result['execution_readiness']['checks']))
     for dim, limit in budget["caps"].items():
         high = resource_costs["totals"]["high"][dim]
         if high is None:
@@ -468,6 +484,7 @@ def evaluate(d, p, root=ROOT):
     return {"harness_version": VERSION, "policy_version": p["version"], "policy_sha256": original_policy_hash,
             "dossier_sha256": digest(canonical(d)), "as_of": d["as_of"], "purpose": d["purpose"],
             "review_object": obj, "score_kind": obj,
+            "score_basis": 'design_quality' if design else 'evidence_maturity',
             "scorecards": {"product": round(total,2) if obj=='product' else None, "development_plan": round(total,2) if obj=='development_plan' else None},
             "decision_scope": 'milestone:'+str(d['plan']['requested_milestone']) if plan_result else 'product:'+d['stage'],
             "plan": plan_result,
@@ -478,7 +495,7 @@ def evaluate(d, p, root=ROOT):
             "costs": costs, "resource_status": "BLOCKED" if resource_reasons else "WITHIN_CAPS_PENDING_OWNER_DECISION",
             "resource_reasons": resource_reasons, "evidence_checks": ev, "sensitivity": sensitivity,
             "next_experiment": next_experiment, "calibration": p["calibration"],
-            "limits": ["评分为试行证据下限，未知未被判为产品失败；上界不是预测或置信区间。",
+            "limits": [("方案分衡量设计质量；原始PRD可支持0—4分，实证成熟度另列。覆盖率只表示评分有可回查材料，不是验证完成率。" if design else "评分为试行证据下限，未知未被判为产品失败；上界不是预测或置信区间。"),
                        "程序校验引用完整性和声明关系，不能独立证明语义、真实性或市场效果。",
                        "填写者可伪造声明；需要有出处的评议记录与抽查，本版没有身份签名或权限服务器。",
                        "质量资格不构成上线、拨款、联系他人或消耗关系资源的授权。"]}
@@ -486,14 +503,25 @@ def evaluate(d, p, root=ROOT):
 
 def render_markdown(r):
     title = '开发方案' if r['review_object']=='development_plan' else '产品'
+    design = r.get('score_basis') == 'design_quality'
+    label = '方案设计质量分' if design else '证据约束分'
     lines = [f"# {r['product']['name']} · {title}三层评审", "", f"版本：{r['product']['version']}；阶段：{r['stage']}；截至：{r['as_of']}；性质：{r['purpose']}", "",
              f"**结论：{r['verdict']}**；资源：{r['resource_status']}", "",
              f"分数类型：{title}；决定范围：{r['decision_scope']}。方案分与产品分分别记录，不合并或直接排名。", "",
-             f"证据约束分 **{r['score']}/100**；未知补齐上界 {r['ceiling']}；证据覆盖 {r['coverage']}%。参数版本 {r['policy_version']}，{r['calibration']}。", "",
-             "分数用于比较当前证据支持的程度；缺证不等于产品没有价值。", "",
+             f"{label} **{r['score']}/100**；未评分项补齐上界 {r['ceiling']}；评分材料覆盖 {r['coverage']}%。参数版本 {r['policy_version']}，{r['calibration']}。", "",
+             ("PRD原文可充分支持高设计分；实际试用和市场效果单列，未实施不扣设计分。" if design else "分数用于比较当前证据支持的程度；缺证不等于产品没有价值。"), "",
              "| 层 | 分数下限 | 未知补齐上界 | 覆盖 |", "|---|---:|---:|---:|"]
     for layer, v in r["layers"].items():
         lines.append(f"| {layer} | {v['score']} | {v['ceiling']} | {v['coverage']}% |")
+    if design:
+        plan=r['plan']
+        bonus=plan['evidence_bonus']
+        lines += ['', f"**设计质量 {r['score']}/100 ＋ 关键假设证据加分 {bonus['points']}/{bonus['max_points']}**；附加参考总分 {bonus['reference_total']}。资格阈值只看设计分；缺证仅为+0。", '',
+                  '证据加分明细：', '', '```json',json.dumps(bonus,ensure_ascii=False,indent=2),'```']
+        lines += ['', '## 实证与执行准备（不计入设计分）', '',
+                  f"实际验证：{plan['validation_maturity']['status']}；执行准备：{plan['execution_readiness']['status']}；资源：{r['resource_status']}。", '',
+                  '```json', json.dumps({'validation_maturity':plan['validation_maturity'], 'execution_readiness':plan['execution_readiness'],
+                                        'actual_reviews':r['reviews']},ensure_ascii=False,indent=2), '```', '']
     for layer, v in r["layers"].items():
         lines += ["", f"## {layer}", "", f"价值：{v['value']}", "", f"问题：{v['problems']}", "", f"下一动作：{v['next_action']}"]
     lines += ["", "## 卖点与证据", ""]

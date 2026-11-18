@@ -47,6 +47,26 @@ def plan_fixture(root,p):
     return d
 
 
+def document_only(d):
+    """A scoring-mechanism fixture: document material, no empirical outcomes."""
+    source=next(e for e in d['evidence'] if e['id']=='source-a')
+    source['strength']='documented'
+    d['evidence']=[source]
+    def trim(x):
+        if isinstance(x,dict):
+            for k,v in x.items():
+                if k in ('evidence_refs','counterevidence_refs'):
+                    x[k]=['source-a'] if v and k=='evidence_refs' else []
+                else:trim(v)
+        elif isinstance(x,list):
+            for v in x:trim(v)
+    trim(d)
+    for r in d['reviews'].values():r.update(status='not_run',evidence_refs=[],reason='尚无实际运行或试用')
+    for line in d['bom']['lines']:line['status']='estimated'
+    d['stage']='development'
+    return d
+
+
 class PlanTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
@@ -81,7 +101,10 @@ class PlanTests(unittest.TestCase):
         r=self.run_case();self.assertEqual((r['score'],r['verdict']),(100,'DOES_NOT_MEET'))
     def test_development_cannot_treat_hypothesis_as_fact(self):
         self.d['stage']='development'
-        self.assertEqual(self.run_case()['verdict'],'NEEDS_EVIDENCE')
+        r=self.run_case()
+        self.assertEqual(r['verdict'],'PLAN_ELIGIBLE_FOR_OWNER_REVIEW')
+        self.assertEqual(r['plan']['assumptions'][0]['status'],'unknown')
+        self.assertEqual(r['plan']['validation_maturity']['status'],'UNVERIFIED')
     def test_technical_evidence_cannot_support_demand(self):
         self.d['stage']='development';a=self.d['plan']['assumptions'][0]
         a.update(status='supported',evidence_refs=['test_run-a','test_run-b'])
@@ -98,13 +121,17 @@ class PlanTests(unittest.TestCase):
             with self.subTest(key=key):
                 original=self.d['plan']['milestones'][0][key]
                 self.d['plan']['milestones'][0][key]=None if key!='deliverable' else ''
-                self.assertEqual(self.run_case()['verdict'],'NEEDS_EVIDENCE')
+                r=self.run_case()
+                self.assertEqual(r['verdict'],'NEEDS_EVIDENCE' if key=='deliverable' else 'PLAN_ELIGIBLE_FOR_OWNER_REVIEW')
+                if key!='deliverable':self.assertEqual(r['plan']['execution_readiness']['status'],'NOT_READY')
                 self.d['plan']['milestones'][0][key]=original
         self.d['plan']['milestones'][0]['acceptance']['fail']=''
         self.assertEqual(self.run_case()['verdict'],'NEEDS_EVIDENCE')
     def test_expired_requested_deadline_blocks(self):
         self.d['plan']['milestones'][0]['due']='2026-11-01'
-        self.assertEqual(self.run_case()['verdict'],'DOES_NOT_MEET')
+        r=self.run_case()
+        self.assertEqual(r['verdict'],'PLAN_ELIGIBLE_FOR_OWNER_REVIEW')
+        self.assertEqual(r['plan']['execution_readiness']['status'],'NOT_READY')
     def test_missing_stop_blocks(self):
         self.d['plan']['stop_conditions']=[]
         self.assertEqual(self.run_case()['verdict'],'NEEDS_EVIDENCE')
@@ -142,12 +169,95 @@ class PlanTests(unittest.TestCase):
                 self.assertFalse(r['evidence_checks']['test_run-a']['usable'])
     def test_source_can_define_need_but_not_prove_demand(self):
         self.d['ratings']['PJ1'].update(score=4,evidence_refs=['source-a','source-b'])
-        r=self.run_case();self.assertEqual(r['metrics']['PJ1']['score'],1)
+        r=self.run_case();self.assertEqual(r['metrics']['PJ1']['score'],4)
         self.d['stage']='development';self.d['gates']['PG_DEMAND']['evidence_refs']=['source-a','source-b']
-        r=self.run_case();self.assertEqual(next(g['status'] for g in r['gates'] if g['id']=='PG_DEMAND'),'unknown')
-    def test_low_cap_source_cannot_supply_second_top_score_group(self):
-        self.d['ratings']['PJ1']['evidence_refs']=['customer-a','source-b']
-        r=self.run_case();self.assertEqual(r['metrics']['PJ1']['score'],3)
+        r=self.run_case();self.assertEqual(next(g['status'] for g in r['gates'] if g['id']=='PG_DEMAND'),'met')
+        self.assertEqual(r['plan']['assumptions'][0]['status'],'unknown')
+    def test_single_document_can_support_full_design_scale_without_trials(self):
+        document_only(self.d)
+        r=self.run_case()
+        self.assertEqual((r['score'],r['verdict']),(100,'PLAN_ELIGIBLE_FOR_OWNER_REVIEW'))
+        self.assertEqual(r['score_basis'],'design_quality')
+        self.assertEqual(r['plan']['validation_maturity']['status'],'UNVERIFIED')
+        self.assertEqual(r['resource_status'],'BLOCKED')
+        self.assertTrue(all(x['status']=='not_run' for x in r['reviews'].values()))
+        self.assertEqual(r['evidence_checks']['source-a']['cap'],2)
+    def test_document_does_not_raise_reviewer_rating(self):
+        document_only(self.d)
+        for rating in self.d['ratings'].values():rating['score']=1
+        r=self.run_case();self.assertEqual((r['score'],r['verdict']),(25,'REWORK'))
+    def test_document_cannot_prove_assumptions_or_dependency_availability(self):
+        document_only(self.d)
+        self.d['plan']['assumptions'][0]['status']='supported'
+        self.d['plan']['dependencies'][0]['status']='available'
+        r=self.run_case()
+        self.assertEqual(r['plan']['assumptions'][0]['status'],'unknown')
+        self.assertEqual(r['plan']['dependencies'][0]['status'],'unverified')
+        self.assertEqual(r['plan']['evidence_bonus']['points'],0)
+    def test_critical_evidence_adds_bonus_without_changing_design_score(self):
+        without=self.run_case()
+        self.d['plan']['assumptions'][0]['status']='supported'
+        with_proof=self.run_case()
+        self.assertEqual(without['score'],with_proof['score'])
+        self.assertEqual(without['verdict'],with_proof['verdict'])
+        self.assertEqual(without['plan']['evidence_bonus']['points'],0)
+        self.assertEqual(with_proof['plan']['evidence_bonus']['points'],10)
+        self.assertEqual(with_proof['plan']['evidence_bonus']['reference_total'],110)
+    def test_single_observation_gets_partial_bonus_and_no_group_laundering(self):
+        self.d['plan']['assumptions'][0].update(status='supported',evidence_refs=['customer-a'])
+        self.assertEqual(self.run_case()['plan']['evidence_bonus']['points'],5)
+        for e in self.d['evidence']:
+            if e['id']=='customer-b':e['independence_group']='a'
+        self.d['plan']['assumptions'][0]['evidence_refs'].append('customer-b')
+        self.assertEqual(self.run_case()['plan']['evidence_bonus']['points'],5)
+    def test_evidence_bonus_never_rescues_bad_design(self):
+        self.d['plan']['assumptions'][0]['status']='supported'
+        self.d['gates']['PG_EVAL']['status']='not_met'
+        r=self.run_case()
+        self.assertEqual(r['plan']['evidence_bonus']['points'],10)
+        self.assertEqual(r['verdict'],'DOES_NOT_MEET')
+    def test_bonus_does_not_replace_design_threshold(self):
+        self.d['stage']='development'
+        self.d['plan']['assumptions'][0]['status']='supported'
+        for rating in self.d['ratings'].values():rating['score']=3
+        r=self.run_case()
+        self.assertEqual((r['score'],r['plan']['evidence_bonus']['reference_total']),(75,85))
+        self.assertEqual(r['verdict'],'REWORK')
+    def test_irrelevant_technical_evidence_cannot_earn_demand_bonus(self):
+        self.d['plan']['assumptions'][0].update(status='supported',evidence_refs=['test_run-a','test_run-b'])
+        r=self.run_case()
+        self.assertEqual(r['plan']['evidence_bonus']['points'],0)
+        self.assertEqual(r['verdict'],'PLAN_ELIGIBLE_FOR_OWNER_REVIEW')
+    def test_unknown_numeric_cost_is_not_missing_design(self):
+        document_only(self.d)
+        self.d['bom']['lines'][0]['per_quantity']['cash']['high']=None
+        r=self.run_case()
+        self.assertEqual(r['verdict'],'PLAN_ELIGIBLE_FOR_OWNER_REVIEW')
+        self.assertIsNone(r['costs']['totals']['high']['cash'])
+        self.assertEqual(r['plan']['execution_readiness']['status'],'NOT_READY')
+        self.assertEqual(r['resource_status'],'BLOCKED')
+    def test_missing_cost_basis_still_blocks_design(self):
+        document_only(self.d)
+        self.d['bom']['lines'][0]['evidence_refs']=[]
+        self.assertEqual(self.run_case()['verdict'],'NEEDS_EVIDENCE')
+    def test_contradictory_category_na_blocks_design(self):
+        self.d['bom']['coverage']['inference']['status']='not_applicable'
+        self.assertEqual(self.run_case()['verdict'],'DOES_NOT_MEET')
+    def test_dependency_graph_is_design_not_completed_execution(self):
+        m=copy.deepcopy(self.d['plan']['milestones'][0]);m.update(id='M2',depends_on=['M1'],bom_line_ids=['human_delivery'])
+        self.d['plan']['milestones'][0]['bom_line_ids']=['inference']
+        self.d['plan']['milestones'].append(m);self.d['plan']['requested_milestone']='M2';self.d['budget']['scope']='milestone:M2'
+        r=self.run_case()
+        self.assertEqual(r['verdict'],'PLAN_ELIGIBLE_FOR_OWNER_REVIEW')
+        self.assertEqual(r['plan']['execution_readiness']['status'],'NOT_READY')
+    def test_old_policy_keeps_document_caps_and_trial_requirements(self):
+        document_only(self.d)
+        self.p['plan_review'].pop('score_basis')
+        self.p['plan_review']['metrics'][0]['kind_caps']={'source':1}
+        r=self.run_case()
+        self.assertLess(r['score'],50)
+        self.assertEqual(r['score_basis'],'evidence_maturity')
+        self.assertEqual(r['verdict'],'NEEDS_EVIDENCE')
     def test_phase_totals_reconcile_without_unknown_as_zero(self):
         r=self.run_case()
         for dim in self.p['resource_dimensions']:

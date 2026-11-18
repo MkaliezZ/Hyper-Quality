@@ -95,6 +95,10 @@ def validate_plan(d, p, require, refs):
 
 def assess_plan(d, p, ev, select, cost_model):
     plan=d['plan']; gates=[]
+    design = p.get('score_basis') == 'design_quality'
+    execution_checks = []
+    def execution(gid, status, reason):
+        execution_checks.append(dict(id=gid, status=status, reason=reason))
     def add(gid, name, status, reason, refs=()):
         gates.append(dict(id=gid,name=name,status=status,reason=reason,evidence_refs=list(refs),computed=True))
     def proof(refs,target,kinds=None,cap=2): return select(ev,refs,target,kinds,cap)
@@ -112,16 +116,29 @@ def assess_plan(d, p, ev, select, cost_model):
     orphans=[x['id'] for x in d['bom']['lines'] if x['phase'] in ('validation','development') and x['basis']!='sunk' and x['id'] not in assigned]
     if orphans:add('PLAN_COST_ASSIGNMENT','开发资源归属','unknown','未绑定里程碑：'+','.join(orphans))
     for m in milestones:
-        gaps=[k for k in ('owner','due','deliverable') if not content(m[k])]
+        gaps=[k for k in (('deliverable',) if design else ('owner','due','deliverable')) if not content(m[k])]
         gaps += ['acceptance.'+k for k,v in m['acceptance'].items() if not content(v)]
         if not m['stop_conditions']:gaps.append('stop_conditions')
         if not m['bom_line_ids']:gaps.append('bom_line_ids')
         add('PLAN_MILESTONE_'+m['id'],'里程碑 '+m['title'],'unknown' if gaps else 'met',
-            '缺少：'+','.join(gaps) if gaps else '交付/负责人/日期/验收/停止/成本已列；不代表里程碑已完成')
+            '缺少：'+','.join(gaps) if gaps else ('交付/验收/停止/成本设计已列；不代表已完成或人员已确认' if design else '交付/负责人/日期/验收/停止/成本已列；不代表里程碑已完成'))
     if requested and requested['depends_on']:
-        add('PLAN_REQUEST_READY','本次里程碑的前置完成','unknown','当前仍依赖计划内前置里程碑；先完成前置，再用实际产物更新方案版本，不能一次放行整条路线')
+        if design:
+            execution('PREDECESSORS', 'unknown', '当前里程碑的前置尚未登记为已完成资产；不影响依赖图的设计质量')
+        else:
+            add('PLAN_REQUEST_READY','本次里程碑的前置完成','unknown','当前仍依赖计划内前置里程碑；先完成前置，再用实际产物更新方案版本，不能一次放行整条路线')
     if requested and requested['due'] and requested['due'] < d['as_of']:
-        add('PLAN_DEADLINE','请求里程碑截止日期','not_met','请求执行的截止日期早于评审日期；应更新计划而非假定已完成')
+        if design:
+            execution('DEADLINE', 'not_met', '日历截止时间已过；执行前需更新排期，不倒推设计质量')
+        else:
+            add('PLAN_DEADLINE','请求里程碑截止日期','not_met','请求执行的截止日期早于评审日期；应更新计划而非假定已完成')
+    if design:
+        if not requested or not content(requested['owner']):
+            execution('OWNER', 'unknown', '本次执行负责人待定；方案中的责任分工仍按PF4评审')
+        elif not proof(list(ev), 'PG_OWNER', ['human_review'], 3):
+            execution('OWNER', 'unknown', '已写责任角色/人选，但无实际承接确认；方案文字不等于人员授权')
+        if not requested or not requested['due']:
+            execution('SCHEDULE', 'unknown', '本次日历排期待定；PRD可先评相对顺序与估算逻辑')
     add('PLAN_STOP','全局停止条件','met' if plan['stop_conditions'] else 'unknown','已列全局停止线' if plan['stop_conditions'] else '缺少全局停止线')
     checked_assumptions=[]
     for a in plan['assumptions']:
@@ -131,20 +148,38 @@ def assess_plan(d, p, ev, select, cost_model):
         status=a['status'] if a['status']=='unknown' or available else 'unknown'
         checked_assumptions.append({**a,'status':status,'usable_evidence_refs':[e['id'] for e in available]})
         if a['critical']:
-            validation_allowed=(d['stage']=='validation' and requested and a['id'] in requested['validates_assumptions'] and content(a['validation']))
+            validation_allowed=(content(a['validation']) and (any(a['id'] in m['validates_assumptions'] for m in milestones) if design else
+                (d['stage']=='validation' and requested and a['id'] in requested['validates_assumptions'])))
             condition='not_met' if status=='refuted' else ('met' if status=='supported' or validation_allowed else 'unknown')
             add('PLAN_ASSUMPTION_'+a['id'],'关键假设 '+a['statement'],condition,
-                '已被反证，须改方案' if status=='refuted' else ('有适用支持证据' if status=='supported' else '仅限下一里程碑验证此未知假设' if validation_allowed else '关键假设未知/缺支持证据'),[e['id'] for e in available])
+                '已被反证，须改方案' if status=='refuted' else ('有适用支持证据' if status=='supported' else ('未知已纳入验证设计，事实仍未验证' if design else '仅限下一里程碑验证此未知假设') if validation_allowed else ('关键假设缺少可执行验证安排' if design else '关键假设未知/缺支持证据')),[e['id'] for e in available])
     checked_dependencies=[]
     for x in plan['dependencies']:
         available=proof(x['evidence_refs'],'dependency:'+x['id'],None,3 if x['status']=='available' else 2)
         status=x['status'] if x['status']=='unverified' or available else 'unverified'
         checked_dependencies.append({**x,'status':status,'usable_evidence_refs':[e['id'] for e in available]})
         if x['critical']:
-            investigation=(d['stage']=='validation' and requested and x['id'] in requested['resolves_dependencies'] and content(x['fallback']) and x['owner'])
+            investigation=(content(x['fallback']) and x['owner'] and (any(x['id'] in m['resolves_dependencies'] for m in milestones) if design else
+                (d['stage']=='validation' and requested and x['id'] in requested['resolves_dependencies'])))
             condition='not_met' if status=='unavailable' else ('met' if status=='available' and x['owner'] else 'met' if investigation else 'unknown')
             add('PLAN_DEPENDENCY_'+x['id'],'关键依赖 '+x['description'],condition,
-                '已知无法取得，当前方案不能执行' if status=='unavailable' else '依赖有可核对可用依据和负责人' if status=='available' and x['owner'] else '仅限下一里程碑核实依赖' if investigation else '可用性/负责人未确认',[e['id'] for e in available])
+                '已知无法取得，当前方案不能执行' if status=='unavailable' else '依赖有可核对可用依据和负责人' if status=='available' and x['owner'] else ('已设计核实与备选路径，可用性仍未确认' if design else '仅限下一里程碑核实依赖') if investigation else ('缺可用依据或核实、责任与备选设计' if design else '可用性/负责人未确认'),[e['id'] for e in available])
+            if design and status != 'available' and not (requested and x['id'] in requested['resolves_dependencies'] and investigation):
+                execution('DEPENDENCY_'+x['id'], 'unknown' if status=='unverified' else 'not_met', '关键依赖尚未可用，且本次里程碑未包含核实与备选处置')
+    if design:
+        # Cost drivers and scope are design requirements. Unknown prices/usage
+        # remain unknown in the numeric model, not an automatic design failure.
+        for cat, c in d['bom']['coverage'].items():
+            lines=[x for x in d['bom']['lines'] if x['category']==cat and x['basis']!='sunk']
+            conflict=c['status']=='not_applicable' and bool(lines)
+            good=(c['status']=='included' and bool(lines)) or (c['status']=='not_applicable' and bool(proof(c['evidence_refs'],'BOM')) and not lines)
+            add('PLAN_BOM_'+cat,cat+'成本设计', 'not_met' if conflict else 'met' if good else 'unknown',
+                '不适用与成本行冲突' if conflict else '成本构成已盘点；数值待估不等于零' if good else '成本类别缺项或不适用缺依据')
+        for line in d['bom']['lines']:
+            if line['basis']=='sunk':continue
+            good=content(line['reason']) and content(line['unit']) and bool(proof(line['evidence_refs'],'BOM'))
+            add('PLAN_COST_MODEL_'+line['id'],'成本驱动 '+line['id'],'met' if good else 'unknown',
+                '已列计量单位、计算字段与依据；估算方法是否充分仍按PJ4/PF5评审' if good else '缺少成本驱动、估计/补数方法或可回查设计依据')
     def subset_costs(lines, covered, gap):
         subset=copy.deepcopy(d)
         subset['bom']['lines']=lines
@@ -155,7 +190,7 @@ def assess_plan(d, p, ev, select, cost_model):
             costs['complete']=False;costs['gaps'].append(gap)
             costs['totals']={s:dict.fromkeys(p['resource_dimensions']) for s in ('low','base','high')}
         costs['economics']=None;costs['pressure_cash_balance']=None
-        costs['note']='分组增量需求；非已批准额度或独立利润预测。完整方案缺项仍阻断放行。'
+        costs['note']='分组增量需求；非已批准额度或独立利润预测。数值缺项阻断资源资格，不自动扣设计分。' if design else '分组增量需求；非已批准额度或独立利润预测。完整方案缺项仍阻断放行。'
         return costs
     phases={}
     for phase,c in plan['phase_coverage'].items():
@@ -171,7 +206,41 @@ def assess_plan(d, p, ev, select, cost_model):
     # A separate cost window for the one requested milestone, not the entire roadmap.
     ids=set(requested['bom_line_ids']) if requested else set()
     requested_costs=subset_costs([x for x in d['bom']['lines'] if x['id'] in ids],bool(ids),'本次里程碑没有成本行')
-    return gates, {'version':plan['version'],'requested_milestone':plan['requested_milestone'],
+    result = {'version':plan['version'],'requested_milestone':plan['requested_milestone'],
         'milestones':milestones,'stop_conditions':plan['stop_conditions'],'assumptions':checked_assumptions,
         'dependencies':checked_dependencies,'phases':phases,'requested_costs':requested_costs,
         'scope_in':plan['scope_in'],'scope_out':plan['scope_out']}
+    if design:
+        full_costs=cost_model(d,p,ev)
+        if not full_costs['complete'] or not requested_costs['complete']:
+            execution('COST_ESTIMATES','unknown','执行资源需求尚未完整核算；不把未知成本视为免费')
+        unresolved=[a['id'] for a in checked_assumptions if a['status']=='unknown']
+        unverified=[x['id'] for x in checked_dependencies if x['status']=='unverified']
+        refuted=[a['id'] for a in checked_assumptions if a['status']=='refuted']
+        unavailable=[x['id'] for x in checked_dependencies if x['status']=='unavailable']
+        supported=[a['id'] for a in checked_assumptions if a['status']=='supported']
+        available=[x['id'] for x in checked_dependencies if x['status']=='available']
+        maturity='COUNTEREVIDENCE' if refuted or unavailable else 'PARTIALLY_VERIFIED' if (supported or available) and (unresolved or unverified) else 'SUPPORTED_FOR_DECLARED_SCOPE' if (supported or available) else 'UNVERIFIED'
+        result['validation_maturity']=dict(status=maturity, supported_assumptions=supported, unknown_assumptions=unresolved,
+            refuted_assumptions=refuted, available_dependencies=available, unverified_dependencies=unverified, unavailable_dependencies=unavailable,
+            note='仅汇总已登记事实；不是产品验收、需求成功概率或设计分的乘数')
+        result['execution_readiness']=dict(status='NOT_READY' if execution_checks else 'CONDITIONAL' if unresolved or unverified else 'CHECKS_SATISFIED_PENDING_OWNER',
+            checks=execution_checks, validation_conditions=unresolved+unverified,
+            note='尚待验证的假设可在设计好的试验里检验；不要求先完成产品试用才允许开发。预算与质量资格另行核查。')
+        bonus_cfg=p['evidence_bonus']
+        by_kind={}
+        items=[]
+        for a in checked_assumptions:
+            if not a['critical']:continue
+            evidence=proof(a['evidence_refs'],'assumption:'+a['id'],ASSUMPTION_KINDS[a['kind']],3) if a['status']=='supported' else []
+            replicated=any(e['cap']>=4 for e in evidence) and len({e['independence_group'] for e in evidence})>=2
+            level='replicated' if replicated else 'observed' if evidence else 'unverified'
+            factor=bonus_cfg['strength_factors'].get(level,0)
+            by_kind.setdefault(a['kind'],[]).append(factor)
+            items.append(dict(id=a['id'],kind=a['kind'],level=level,factor=factor,evidence_refs=[e['id'] for e in evidence]))
+        denominator=sum(bonus_cfg['kind_weights'][k] for k in by_kind)
+        ratio=sum(bonus_cfg['kind_weights'][k]*sum(v)/len(v) for k,v in by_kind.items())/denominator if denominator else 0
+        result['evidence_bonus']=dict(points=round(bonus_cfg['max_points']*ratio,2),max_points=bonus_cfg['max_points'],items=items,
+            applicable_kinds=list(by_kind),
+            note='关键假设已有适用证据只作加分。无证据为+0，不扣设计分、不阻断；不用于抵消设计硬伤、替代预算或宣布产品已验收。')
+    return gates, result

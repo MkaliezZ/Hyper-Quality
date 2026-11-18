@@ -2,9 +2,11 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-Evidence-bounded quality and resource reviews for products and development plans, built on the judgment, function and asset layers of [Hyper Protocol](https://github.com/MkaliezZ/Hyper-Protocol).
+Design-quality reviews for PRDs and evidence-bounded product/resource reviews for products and development plans, built on the judgment, function and asset layers of [Hyper Protocol](https://github.com/MkaliezZ/Hyper-Protocol).
 
-**Version 0.2.0 · provisional policy.** Review skills, bots, agents, courses, hardware and research products. Plans and implemented products receive separate scores. High scores never override failed gates, and missing budgets never become funding approval.
+**Version 0.3.0 · provisional policy.** Review skills, bots, agents, courses, hardware and research products. Plans and implemented products receive separate scores. High scores never override failed gates, and missing budgets never become funding approval.
+
+A strong PRD can now earn a high **design-quality score without product trials**. Empirical validation maturity, execution readiness and resource eligibility are separate outputs. Applicable evidence supporting critical assumptions earns a separate bonus of up to 10 points. No evidence means +0, never a design deduction or admission gate. A high plan score never marks a hypothesis as verified. Existing product scoring is unchanged. Version 0.2 plan scores need a fresh review under the new anchors, not a numeric conversion.
 
 ## What it does
 
@@ -23,8 +25,8 @@ An AI or human reviewer reads the sources and proposes ratings. The deterministi
 Python **3.11+**. Core scoring uses the standard library. Run from the repository root:
 
 ```sh
-python harness.py init --id example --name "Example product" --profile agent --as-of 2026-11-17 --out runtime/product.json
-python harness.py init --review-object development_plan --id example-plan --name "Example plan" --profile agent --as-of 2026-11-17 --out runtime/plan.json
+python harness.py init --id example --name "Example product" --profile agent --as-of 2026-11-18 --out runtime/product.json
+python harness.py init --review-object development_plan --id example-plan --name "Example plan" --profile agent --as-of 2026-11-18 --out runtime/plan.json
 python harness.py validate --input runtime/product.json
 python harness.py review --input runtime/product.json --out runtime/product-review-1
 ```
@@ -51,7 +53,7 @@ python tools/verify_bundle.py runtime/demo-1/product/task-bundle.json
 python tools/verify_public_source.py
 ```
 
-The product suite runs all unit tests plus 8 product scenarios. The plan suite checks 27 scenarios, including expected invalid inputs, 22 exported bundles and portable replay. These are engineering regressions, not AI judge calibration or market/teaching validation. Private historical reviews are excluded. See [validation scope](docs/VALIDATION.md).
+The product suite runs all unit tests plus 8 product scenarios. The plan suite checks 36 scenarios, including expected invalid inputs, 31 exported bundles and portable replay. These are engineering regressions, not AI judge calibration or market/teaching validation. Private historical reviews are excluded. See [validation scope](docs/VALIDATION.md).
 
 ## Replay and calibration
 

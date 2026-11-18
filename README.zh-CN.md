@@ -4,7 +4,9 @@
 
 基于 [Hyper Protocol](https://github.com/MkaliezZ/Hyper-Protocol) 的判断、功能、资产三层，对**开发方案和实际产品分别评审**，为质量改进与现实资源分配提供可追溯依据。
 
-**0.2.0 / 试行规则。** 支持 Skill、Bot、Agent、课程、硬件和研究型产品。方案通过不代表产品实现，高分不抵消硬门槛，预算未知不产生拨款或上线授权。
+**0.3.0 / 试行规则。** 支持 Skill、Bot、Agent、课程、硬件和研究型产品。方案通过不代表产品实现，高分不抵消硬门槛，预算未知不产生拨款或上线授权。
+
+**PRD现在评设计质量，不要求先有产品试用。** 充分的原始方案可支持高分；关键假设已有适用证据另加最高10分，缺证+0不扣分、不阻断；实证成熟度、执行准备和资源资格另列，假设仍可未验证，预算仍留空。产品评分不变。旧0.2.0方案须按新锚点重评，不能机械换算。
 
 ## 能做什么
 
@@ -23,8 +25,8 @@ AI或评审者负责实际读材料并提出评分，程序负责校验、约束
 需要 Python **3.11+**。核心评分仅用标准库，在仓库根目录运行：
 
 ```sh
-python harness.py init --id example --name "待评产品" --profile agent --as-of 2026-11-17 --out runtime/product.json
-python harness.py init --review-object development_plan --id example-plan --name "待评开发方案" --profile agent --as-of 2026-11-17 --out runtime/plan.json
+python harness.py init --id example --name "待评产品" --profile agent --as-of 2026-11-18 --out runtime/product.json
+python harness.py init --review-object development_plan --id example-plan --name "待评开发方案" --profile agent --as-of 2026-11-18 --out runtime/plan.json
 python harness.py validate --input runtime/product.json
 python harness.py review --input runtime/product.json --out runtime/product-review-1
 ```
@@ -51,7 +53,7 @@ python tools/verify_bundle.py runtime/demo-1/product/task-bundle.json
 python tools/verify_public_source.py
 ```
 
-产品eval包含全部单元测试及8种产品行为场景；方案eval包含27种场景，其中22种生成协议包并检查复放。非法输入的预期拒绝也计入场景。公开版不含私人历史案例；回归通过不代表AI评分、市场或教学已校准。[验证范围](docs/VALIDATION.md)
+产品eval包含全部单元测试及8种产品行为场景；方案eval包含36种场景，其中31种生成协议包并检查复放。非法输入的预期拒绝也计入场景。公开版不含私人历史案例；回归通过不代表AI评分、市场或教学已校准。[验证范围](docs/VALIDATION.md)
 
 ## 复放与校准
 

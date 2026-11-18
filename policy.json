@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "status": "provisional",
   "calibration": "not_business_validated",
   "protocol_commit": "5f5d4977a94ebe21ba83a50ef963bfbe92dd4173",
@@ -597,17 +597,14 @@
         "id": "PJ1",
         "layer": "judgment",
         "weight": 30,
-        "name": "问题与需求依据",
+        "name": "需求定义与推理",
         "kinds": [
           "source",
           "customer",
           "transaction",
           "raw_data"
         ],
-        "question": "谁的何种代价值得解决，原始需求与反向样本是什么？",
-        "kind_caps": {
-          "source": 1
-        }
+        "question": "目标用户、任务、痛点机制、替代方式与可证伪的需求假设是否清楚？实际需求是否成立另列。"
       },
       {
         "id": "PJ2",
@@ -645,7 +642,7 @@
           "source",
           "raw_data"
         ],
-        "question": "开发、运营、退出与本人时间是否完整，估计有哪些依据和误差？"
+        "question": "成本驱动、四阶段范围、估计方法、误差与补数安排是否充分？未知报价不作零，额度不编造。"
       },
       {
         "id": "PJ5",
@@ -708,7 +705,7 @@
           "test_run",
           "raw_data"
         ],
-        "question": "每步是否有产物、负责人、日期、验收和前置依赖？"
+        "question": "里程碑是否有交付、责任角色、顺序、估算逻辑、验收与停止线？具体人选与日历日期可待执行确认。"
       },
       {
         "id": "PF5",
@@ -844,37 +841,40 @@
       },
       {
         "id": "PG_DEMAND",
-        "name": "关键需求有真实行为或代价依据",
+        "name": "需求推理与可证伪假设设计",
         "kinds": [
+          "source",
           "customer",
           "raw_data",
           "transaction"
         ],
-        "min_strength": 3,
+        "min_strength": 2,
         "stages": [
           "development"
         ]
       },
       {
         "id": "PG_FEASIBILITY",
-        "name": "关键技术与集成可行性核实",
+        "name": "技术路径与关键风险验证设计",
         "kinds": [
+          "source",
           "test_run",
           "raw_data"
         ],
-        "min_strength": 3,
+        "min_strength": 2,
         "stages": [
           "development"
         ]
       },
       {
         "id": "PG_OWNER",
-        "name": "下一里程碑责任与承接确认",
+        "name": "责任角色与交接设计",
         "kinds": [
+          "source",
           "human_review",
           "customer"
         ],
-        "min_strength": 3,
+        "min_strength": 2,
         "stages": [
           "development"
         ]
@@ -919,10 +919,7 @@
           "asset": 70
         },
         "coverage_min": 95,
-        "required_reviews": [
-          "engineering",
-          "domain"
-        ]
+        "required_reviews": []
       }
     },
     "zero_score_blocks": [
@@ -941,6 +938,20 @@
       "PA3",
       "PA4",
       "PA5"
-    ]
+    ],
+    "score_basis": "design_quality",
+    "evidence_bonus": {
+      "max_points": 10,
+      "kind_weights": {
+        "demand": 4,
+        "feasibility": 3,
+        "economics": 2,
+        "rights": 1
+      },
+      "strength_factors": {
+        "observed": 0.5,
+        "replicated": 1
+      }
+    }
   }
 }
